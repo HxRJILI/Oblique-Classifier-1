@@ -6,7 +6,7 @@ An open-source implementation of the Oblique Classifier 1 (OC1) decision tree al
 
 This repository is a team effort to rebuild and implement the classic OC1 machine learning algorithm from scratch. The OC1 system is designed to induce decision trees that use linear combinations of attributes (oblique hyperplanes) to partition the data space, often resulting in smaller and more accurate trees than traditional axis-parallel methods (like C4.5 or CART) in specific domains.
 
-Our goal is to create a robust, well-tested, and easy-to-use Python package (or whichever language you have choosen).
+Our goal is to create a robust, well-tested, and easy-to-use Python package (or whichever language you choose).
 
 ## Team Members
 
