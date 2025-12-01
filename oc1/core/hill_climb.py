@@ -15,13 +15,14 @@ Key Functions:
 - initialize_hyperplane: Create initial hyperplane for optimization
 """
 
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import numpy as np
 
 from oc1.core.splits import (
     partition_data,
     calculate_impurity_from_partition,
     evaluate_hyperplane,
+    evaluate_split,
     find_best_threshold,
 )
 
@@ -249,6 +250,8 @@ def hill_climb(
     impurity_measure: str = "sm",
     max_iterations: int = 100,
     tolerance: float = 1e-10,
+    perturbation_order: Optional[List[int]] = None,
+    rng: Optional[np.random.Generator] = None,
 ) -> Tuple[np.ndarray, float, int]:
     """
     Perform deterministic hill-climbing optimization (Section 2.1).
@@ -267,6 +270,10 @@ def hill_climb(
         impurity_measure: "sm" for Sum Minority or "mm" for Max Minority.
         max_iterations: Maximum number of full passes through all coefficients.
         tolerance: Minimum improvement required to continue.
+        perturbation_order: Optional list of coefficient indices specifying
+            the order in which to perturb coefficients. If None, uses
+            sequential order [0, 1, ..., d]. Task 2 will use random orders.
+        rng: NumPy random generator for reproducibility (Task 2 hook).
     
     Returns:
         Tuple containing:
@@ -309,13 +316,17 @@ def hill_climb(
     best_hyperplane = hyperplane.copy()
     best_impurity = current_impurity
     
+    # Use provided perturbation order or default sequential
+    if perturbation_order is None:
+        perturbation_order = list(range(n_features + 1))
+    
     # Hill-climbing loop
     n_iterations = 0
     for iteration in range(max_iterations):
         improved_this_pass = False
         
-        # Cycle through all coefficients (Section 2.1 - sequential)
-        for m in range(n_features + 1):
+        # Cycle through all coefficients in specified order
+        for m in perturbation_order:
             new_hp, new_imp, improved = perturb_coefficient(
                 X, y, hyperplane, m, impurity_measure
             )
@@ -349,6 +360,7 @@ def find_best_hyperplane(
     n_restarts: int = 1,
     max_iterations: int = 100,
     random_state: Optional[int] = None,
+    use_random_perturbation_order: bool = False,
 ) -> Tuple[np.ndarray, float]:
     """
     Find the best hyperplane using hill-climbing with optional restarts.
@@ -362,7 +374,10 @@ def find_best_hyperplane(
         impurity_measure: "sm" for Sum Minority or "mm" for Max Minority.
         n_restarts: Number of random restarts (1 for deterministic, >1 for Task 2).
         max_iterations: Maximum hill-climbing iterations per restart.
-        random_state: Random seed for reproducibility.
+        random_state: Random seed for reproducibility. Uses np.random.default_rng()
+            for proper seed propagation across all random operations.
+        use_random_perturbation_order: If True, randomize the order of coefficient
+            perturbation in each hill-climbing pass (Task 2 enhancement).
     
     Returns:
         Tuple containing:
@@ -373,9 +388,10 @@ def find_best_hyperplane(
     """
     X = np.atleast_2d(X)
     y = np.atleast_1d(y)
+    n_features = X.shape[1]
     
-    if random_state is not None:
-        np.random.seed(random_state)
+    # Use modern RNG for proper seed propagation
+    rng = np.random.default_rng(random_state)
     
     best_hyperplane = None
     best_impurity = float('inf')
@@ -384,17 +400,26 @@ def find_best_hyperplane(
         # For first restart (or deterministic mode), use axis-parallel initialization
         # For subsequent restarts, use random initialization (Task 2 extension point)
         if restart == 0:
-            init_method = "axis_parallel"
+            initial_hp = initialize_hyperplane(X, y, method="axis_parallel")
         else:
-            init_method = "random"
+            # Random initialization using RNG for proper seed propagation
+            initial_hp = rng.standard_normal(n_features + 1)
+            initial_hp = normalize_hyperplane(initial_hp)
         
-        initial_hp = initialize_hyperplane(X, y, method=init_method)
+        # Determine perturbation order
+        if use_random_perturbation_order:
+            perturbation_order = list(range(n_features + 1))
+            rng.shuffle(perturbation_order)
+        else:
+            perturbation_order = None  # Use default sequential order
         
         hp, impurity, _ = hill_climb(
             X, y,
             initial_hyperplane=initial_hp,
             impurity_measure=impurity_measure,
             max_iterations=max_iterations,
+            perturbation_order=perturbation_order,
+            rng=rng,
         )
         
         if impurity < best_impurity:
@@ -426,3 +451,67 @@ def normalize_hyperplane(hyperplane: np.ndarray) -> np.ndarray:
         return hyperplane / feature_norm
     else:
         return hyperplane.copy()
+
+
+def perturb_random_direction(
+    X: np.ndarray,
+    y: np.ndarray,
+    hyperplane: np.ndarray,
+    impurity_measure: str = "sm",
+    n_directions: int = 10,
+    rng: Optional[np.random.Generator] = None,
+) -> Tuple[np.ndarray, float]:
+    """
+    Perturb hyperplane in random directions (multi-coefficient perturbation).
+    
+    This is a hook for Task 2 randomization. It perturbs multiple coefficients
+    simultaneously by adding random direction vectors to the hyperplane.
+    Unlike the sequential single-coefficient perturbation in hill_climb(),
+    this explores the solution space more broadly.
+    
+    Paper Reference: Section 3 - Randomization enhancements
+    
+    Args:
+        X: Feature matrix of shape (n_samples, n_features).
+        y: Class labels of shape (n_samples,).
+        hyperplane: Current hyperplane coefficients [a_1, ..., a_d, a_{d+1}].
+        impurity_measure: "sm" for Sum Minority or "mm" for Max Minority.
+        n_directions: Number of random directions to try.
+        rng: NumPy random generator for reproducibility.
+    
+    Returns:
+        Tuple[np.ndarray, float]: (best_hyperplane, best_impurity)
+    
+    Example:
+        >>> X = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
+        >>> y = np.array([0, 1, 1, 0])
+        >>> hp = np.array([1.0, 0.0, -0.5])
+        >>> rng = np.random.default_rng(42)
+        >>> new_hp, imp = perturb_random_direction(X, y, hp, rng=rng)
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    
+    best_hyperplane = hyperplane.copy()
+    best_impurity = evaluate_split(X, y, hyperplane, impurity_measure)
+    
+    n_features = len(hyperplane) - 1
+    
+    for _ in range(n_directions):
+        # Generate random direction vector
+        direction = rng.standard_normal(n_features + 1)
+        
+        # Try different step sizes
+        for step_size in [0.1, 0.5, 1.0]:
+            perturbed = hyperplane + step_size * direction
+            
+            # Normalize to prevent coefficient explosion
+            perturbed = normalize_hyperplane(perturbed)
+            
+            impurity = evaluate_split(X, y, perturbed, impurity_measure)
+            
+            if impurity < best_impurity:
+                best_impurity = impurity
+                best_hyperplane = perturbed.copy()
+    
+    return best_hyperplane, best_impurity

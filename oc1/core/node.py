@@ -33,6 +33,7 @@ class ObliqueTreeNode:
         class_distribution: Dict mapping class labels to counts at this node
         left_child: Left subtree (for samples where V_j > 0)
         right_child: Right subtree (for samples where V_j ≤ 0)
+        parent: Parent node (None for root). Added for Task 3 pruning support.
         is_leaf: Whether this is a leaf node
         predicted_class: Class label predicted at this node (for leaves)
         depth: Depth of this node in the tree (root = 0)
@@ -51,6 +52,7 @@ class ObliqueTreeNode:
         depth: int = 0,
         n_samples: int = 0,
         impurity: float = 0.0,
+        parent: Optional['ObliqueTreeNode'] = None,
     ) -> None:
         """
         Initialize an ObliqueTreeNode.
@@ -64,11 +66,13 @@ class ObliqueTreeNode:
             depth: Depth of this node in the tree.
             n_samples: Number of training samples reaching this node.
             impurity: Impurity measure at this node.
+            parent: Parent node reference (None for root). Used for Task 3 pruning.
         """
         self.hyperplane = hyperplane
         self.class_distribution = class_distribution if class_distribution is not None else {}
         self.left_child: Optional[ObliqueTreeNode] = None
         self.right_child: Optional[ObliqueTreeNode] = None
+        self.parent: Optional[ObliqueTreeNode] = parent
         self.is_leaf = is_leaf
         self.predicted_class = predicted_class
         self.depth = depth
@@ -181,7 +185,7 @@ class ObliqueTreeNode:
     
     def copy(self) -> 'ObliqueTreeNode':
         """
-        Create a shallow copy of this node (without children).
+        Create a shallow copy of this node (without children or parent).
         
         Returns:
             A new ObliqueTreeNode with the same attributes.
@@ -194,6 +198,7 @@ class ObliqueTreeNode:
             depth=self.depth,
             n_samples=self.n_samples,
             impurity=self.impurity,
+            parent=None,  # Don't copy parent reference
         )
         return node
     

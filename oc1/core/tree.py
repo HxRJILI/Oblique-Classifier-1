@@ -151,9 +151,11 @@ class ObliqueDecisionTree:
         if len(X) == 0:
             raise ValueError("Cannot fit on empty dataset")
         
-        # Set random state
+        # Set random state using modern RNG
         if self.random_state is not None:
-            np.random.seed(self.random_state)
+            self._rng = np.random.default_rng(self.random_state)
+        else:
+            self._rng = np.random.default_rng()
         
         # Store dataset info
         self.n_features_ = X.shape[1]
@@ -171,6 +173,7 @@ class ObliqueDecisionTree:
         X: np.ndarray,
         y: np.ndarray,
         depth: int,
+        parent: Optional[ObliqueTreeNode] = None,
     ) -> ObliqueTreeNode:
         """
         Recursively build the decision tree.
@@ -184,6 +187,7 @@ class ObliqueDecisionTree:
             X: Feature matrix for current node.
             y: Labels for current node.
             depth: Current depth in the tree.
+            parent: Parent node reference (for Task 3 pruning support).
         
         Returns:
             ObliqueTreeNode: The constructed node (may be leaf or internal).
@@ -194,12 +198,13 @@ class ObliqueDecisionTree:
         class_counts = compute_class_counts(y)
         majority_class = get_majority_class(y)
         
-        # Create node
+        # Create node with parent reference
         node = ObliqueTreeNode(
             class_distribution=class_counts,
             depth=depth,
             n_samples=n_samples,
             predicted_class=majority_class,
+            parent=parent,
         )
         
         # Check stopping criteria (Section 2.4)
@@ -215,13 +220,15 @@ class ObliqueDecisionTree:
             return node
         
         # Find best hyperplane using hill-climbing (Section 2.1)
+        # Generate a seed from tree's RNG for reproducibility
+        node_seed = int(self._rng.integers(0, 2**31 - 1))
         try:
             best_hyperplane, best_impurity = find_best_hyperplane(
                 X, y,
                 impurity_measure=self.impurity_measure,
                 n_restarts=self.n_restarts,
                 max_iterations=self.max_iterations,
-                random_state=None,  # Already set at fit()
+                random_state=node_seed,
             )
         except Exception:
             # Fall back to leaf if hyperplane finding fails
@@ -252,9 +259,9 @@ class ObliqueDecisionTree:
         node.impurity = best_impurity
         node.is_leaf = False
         
-        # Recursively build children
-        node.left_child = self._build_tree(X_left, y_left, depth + 1)
-        node.right_child = self._build_tree(X_right, y_right, depth + 1)
+        # Recursively build children with parent reference
+        node.left_child = self._build_tree(X_left, y_left, depth + 1, parent=node)
+        node.right_child = self._build_tree(X_right, y_right, depth + 1, parent=node)
         
         return node
     
@@ -382,6 +389,72 @@ class ObliqueDecisionTree:
         """
         self._check_is_fitted()
         return self.root.count_nodes()
+    
+    def get_all_nodes(self) -> List[ObliqueTreeNode]:
+        """
+        Get all nodes in the tree in breadth-first order.
+        
+        This method is useful for Task 3 pruning operations that need
+        to traverse or inspect all nodes in the tree.
+        
+        Returns:
+            List[ObliqueTreeNode]: All nodes in breadth-first order.
+        
+        Example:
+            >>> tree.fit(X, y)
+            >>> nodes = tree.get_all_nodes()
+            >>> leaves = [n for n in nodes if n.is_leaf]
+        """
+        self._check_is_fitted()
+        
+        nodes = []
+        queue = [self.root]
+        
+        while queue:
+            node = queue.pop(0)
+            nodes.append(node)
+            
+            if node.left_child:
+                queue.append(node.left_child)
+            if node.right_child:
+                queue.append(node.right_child)
+        
+        return nodes
+    
+    def prune(
+        self,
+        X_val: Optional[np.ndarray] = None,
+        y_val: Optional[np.ndarray] = None,
+        method: str = "rep",
+    ) -> 'ObliqueDecisionTree':
+        """
+        Prune the tree to reduce overfitting.
+        
+        This is a placeholder for Task 3 pruning implementation.
+        
+        Planned pruning methods:
+        - "rep": Reduced Error Pruning - prune subtrees that don't improve
+                 validation accuracy
+        - "mep": Minimum Error Pruning - prune based on expected error
+        - "cost_complexity": Cost-complexity pruning (CART-style)
+        
+        Args:
+            X_val: Validation feature matrix for pruning decisions.
+            y_val: Validation labels.
+            method: Pruning method to use ("rep", "mep", "cost_complexity").
+        
+        Returns:
+            self: The pruned tree.
+        
+        Raises:
+            NotImplementedError: This method will be implemented in Task 3.
+        
+        Paper Reference: Section 4 - Pruning (to be implemented in Task 3)
+        """
+        raise NotImplementedError(
+            "prune() will be implemented in Task 3. "
+            "This placeholder ensures API compatibility for pruning extensions."
+        )
     
     def _check_is_fitted(self) -> None:
         """Check if the tree has been fitted."""

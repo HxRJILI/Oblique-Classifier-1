@@ -1,0 +1,41 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\rjili\Projects\Oblique-Classifier-1
+plugins: cov-7.0.0
+collected 177 items
+
+oc1\tests\task1_tests\test_hill_climb.py ..............................  [ 16%]
+oc1\tests\task1_tests\test_integration.py ........................       [ 30%]
+oc1\tests\task1_tests\test_node.py ............................          [ 46%]
+oc1\tests\task1_tests\test_splits.py ................................... [ 66%]
+..                                                                       [ 67%]
+oc1\tests\task1_tests\test_task_compatibility.py ....................... [ 80%]
+...                                                                      [ 81%]
+oc1\tests\task1_tests\test_tree.py ................................      [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.9-final-0 _______________
+
+Name                                               Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------------
+oc1\__init__.py                                        8      0   100%
+oc1\core\__init__.py                                   5      0   100%
+oc1\core\hill_climb.py                               153      2    99%   160, 493
+oc1\core\node.py                                      79      2    97%   136, 140
+oc1\core\splits.py                                    89      3    97%   98, 284, 287
+oc1\core\tree.py                                     169     19    89%   233-236, 254-255, 532-555
+oc1\data\__init__.py                                   2      0   100%
+oc1\data\datasets.py                                 105      0   100%
+oc1\evaluation\__init__.py                             9      9     0%   19-113
+oc1\tests\__init__.py                                  0      0   100%
+oc1\tests\task1_tests\__init__.py                      0      0   100%
+oc1\tests\task1_tests\test_hill_climb.py             179      0   100%
+oc1\tests\task1_tests\test_integration.py            176      0   100%
+oc1\tests\task1_tests\test_node.py                   152      0   100%
+oc1\tests\task1_tests\test_splits.py                 199      0   100%
+oc1\tests\task1_tests\test_task_compatibility.py     200      0   100%
+oc1\tests\task1_tests\test_tree.py                   220      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                               1745     35    98%
+Coverage HTML written to dir oc1/tests/task1_tests/results/coverage_html
+============================= 177 passed in 5.27s =============================

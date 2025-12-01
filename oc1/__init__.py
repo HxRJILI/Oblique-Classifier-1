@@ -22,11 +22,18 @@ from oc1.core.splits import (
     calculate_impurity,
     compute_class_counts,
     evaluate_hyperplane,
+    evaluate_split,
+    is_pure,
+    get_majority_class,
 )
 from oc1.core.hill_climb import (
     perturb_coefficient,
     hill_climb,
     initialize_hyperplane,
+    find_best_hyperplane,
+    normalize_hyperplane,
+    compute_u_values,
+    perturb_random_direction,
 )
 
 __version__ = "0.1.0"
@@ -40,7 +47,14 @@ __all__ = [
     "calculate_impurity",
     "compute_class_counts",
     "evaluate_hyperplane",
+    "evaluate_split",
+    "is_pure",
+    "get_majority_class",
     "perturb_coefficient",
     "hill_climb",
     "initialize_hyperplane",
+    "find_best_hyperplane",
+    "normalize_hyperplane",
+    "compute_u_values",
+    "perturb_random_direction",
 ]
