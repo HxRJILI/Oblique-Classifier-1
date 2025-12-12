@@ -31,6 +31,55 @@ This implementation covers the core deterministic components of OC1:
    - Accept if impurity improves
    - Continue until local minimum
 
+## Task 2: Randomization and Enhanced Search
+
+This implementation includes Task 2 enhancements for improved hyperplane search:
+
+1. **Random Hyperplane Initialization** (Section 2.3)
+   - First trial: deterministic axis-parallel split
+   - Subsequent trials: random direction initialization
+   - Proper RNG seed propagation for reproducibility
+
+2. **Multi-Coefficient Perturbation**
+   - Perturb 2-5 coefficients simultaneously
+   - Explore diagonal directions in coefficient space
+   - Escape local minima more effectively
+
+3. **K Random Trials** (n_restarts parameter)
+   - Try multiple random starting points
+   - Select best result across all trials
+   - Default: k=5 for good exploration
+
+4. **Random Perturbation Order**
+   - Randomize order of coefficient optimization
+   - Reduce bias from sequential ordering
+
+### Using Task 2 Features
+
+```python
+# Deterministic (Task 1 only)
+tree_det = ObliqueDecisionTree(n_restarts=1, random_state=42)
+
+# Randomized (Task 2) - Default
+tree_rand = ObliqueDecisionTree(n_restarts=5, random_state=42)
+
+# Aggressive randomization
+tree_aggressive = ObliqueDecisionTree(n_restarts=10, random_state=42)
+```
+
+### Performance Comparison
+
+```python
+from oc1.data import make_xor_dataset
+
+X, y = make_xor_dataset(n_samples=200, random_state=42)
+
+for k in [1, 3, 5, 10]:
+    tree = ObliqueDecisionTree(n_restarts=k, random_state=42)
+    tree.fit(X, y)
+    print(f"k={k}: accuracy={tree.score(X, y):.3f}, depth={tree.get_depth()}")
+```
+
 ## Installation
 
 ```bash
@@ -87,11 +136,15 @@ oc1/
 ├── data/
 │   └── datasets.py       # Synthetic test datasets
 └── tests/
-    ├── test_node.py
-    ├── test_splits.py
-    ├── test_hill_climb.py
-    ├── test_tree.py
-    └── test_integration.py
+    ├── task1_tests/      # Task 1: Core tree construction tests
+    │   ├── test_node.py
+    │   ├── test_splits.py
+    │   ├── test_hill_climb.py
+    │   ├── test_tree.py
+    │   ├── test_integration.py
+    │   └── test_task_compatibility.py
+    └── task2_tests/      # Task 2: Randomization tests
+        └── test_task2.py
 ```
 
 ## API Reference
@@ -105,7 +158,7 @@ ObliqueDecisionTree(
     min_samples_split=2,      # Minimum samples to split
     impurity_measure="sm",    # "sm" (Sum Minority) or "mm" (Max Minority)
     max_iterations=100,       # Hill-climbing iterations per node
-    n_restarts=1,             # Random restarts (1 = deterministic)
+    n_restarts=5,             # Random restarts (5 = Task 2 default, 1 = deterministic)
     random_state=None,        # Random seed
     impurity_threshold=0.0,   # Stop splitting threshold
 )
@@ -142,16 +195,24 @@ X, y = make_diagonal_dataset(n_samples=100, random_state=42)
 # Run all tests
 pytest oc1/tests/ -v
 
+# Run Task 1 tests only
+pytest oc1/tests/task1_tests/ -v
+
+# Run Task 2 tests only
+pytest oc1/tests/task2_tests/ -v
+
 # Run with coverage
 pytest oc1/tests/ --cov=oc1 --cov-report=html
 
 # Run specific test file
-pytest oc1/tests/test_tree.py -v
+pytest oc1/tests/task1_tests/test_tree.py -v
 ```
 
 ## Paper Fidelity
 
 This implementation follows the OC1 paper exactly:
+
+### Task 1: Core Tree Construction
 
 | Feature | Paper Section | Implementation |
 |---------|--------------|----------------|
@@ -161,6 +222,16 @@ This implementation follows the OC1 paper exactly:
 | Max Minority impurity | Section 2.4 | `calculate_impurity()` |
 | U_j formula (Eq. 1) | Section 2.2 | `compute_u_values()` |
 | Sequential perturbation | Section 2.1 | `hill_climb()` |
+
+### Task 2: Randomization Enhancements
+
+| Feature | Paper Section | Implementation |
+|---------|--------------|----------------|
+| Random hyperplane init | Section 2.3 | `initialize_hyperplane(method="random")` |
+| K random trials | Section 2.3 | `n_restarts` parameter |
+| Multi-coefficient perturbation | Section 2 | `perturb_multiple_coefficients()` |
+| Random perturbation order | Section 2 | `use_random_perturbation_order` |
+| Degenerate hyperplane handling | Section 2.4 | `validate_hyperplane()` |
 
 ## Compatibility with Future Tasks
 

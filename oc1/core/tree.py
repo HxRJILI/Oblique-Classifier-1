@@ -83,7 +83,7 @@ class ObliqueDecisionTree:
         min_samples_split: int = 2,
         impurity_measure: str = "sm",
         max_iterations: int = 100,
-        n_restarts: int = 1,
+        n_restarts: int = 10,
         random_state: Optional[int] = None,
         impurity_threshold: float = 0.0,
     ) -> None:
@@ -229,6 +229,7 @@ class ObliqueDecisionTree:
                 n_restarts=self.n_restarts,
                 max_iterations=self.max_iterations,
                 random_state=node_seed,
+                use_random_perturbation_order=True,  # Task 2: Enable random perturbation order
             )
         except Exception:
             # Fall back to leaf if hyperplane finding fails

@@ -150,7 +150,7 @@ class TestFullPipeline:
         """Test full fit-predict pipeline."""
         X, y = make_diagonal_dataset(n_samples=100, random_state=42)
         
-        tree = ObliqueDecisionTree(max_depth=5, random_state=42)
+        tree = ObliqueDecisionTree(max_depth=5, n_restarts=1, random_state=42)
         tree.fit(X, y)
         
         predictions = tree.predict(X)

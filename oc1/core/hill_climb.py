@@ -422,6 +422,15 @@ def find_best_hyperplane(
             rng=rng,
         )
         
+        # TASK 2: Multi-coefficient perturbation enhancement
+        if n_restarts > 1:  # Only apply for randomized mode
+            hp_multi, imp_multi = perturb_multiple_coefficients(
+                X, y, hp, impurity_measure, n_coefficients=3, n_trials=10, rng=rng
+            )
+            if imp_multi < impurity:
+                hp, impurity = hp_multi, imp_multi
+        
+        # Keep best across all restarts
         if impurity < best_impurity:
             best_hyperplane = hp
             best_impurity = impurity
@@ -515,3 +524,122 @@ def perturb_random_direction(
                 best_hyperplane = perturbed.copy()
     
     return best_hyperplane, best_impurity
+
+
+def perturb_multiple_coefficients(
+    X: np.ndarray,
+    y: np.ndarray,
+    hyperplane: np.ndarray,
+    impurity_measure: str = "sm",
+    n_coefficients: int = 3,
+    n_trials: int = 10,
+    rng: Optional[np.random.Generator] = None,
+) -> Tuple[np.ndarray, float]:
+    """
+    Task 2: Perturb multiple coefficients simultaneously to escape local minima.
+    
+    Changes multiple hyperplane coefficients at once by moving in random
+    directions through coefficient space.
+    
+    Args:
+        X: Feature matrix of shape (n_samples, n_features).
+        y: Class labels of shape (n_samples,).
+        hyperplane: Current hyperplane coefficients [a_1, ..., a_d, a_{d+1}].
+        impurity_measure: "sm" for Sum Minority or "mm" for Max Minority.
+        n_coefficients: Number of coefficients to perturb simultaneously.
+        n_trials: Number of random trials to attempt.
+        rng: NumPy random generator for reproducibility.
+    
+    Returns:
+        Tuple[np.ndarray, float]: (best_hyperplane, best_impurity)
+    
+    Paper Reference: Section 2.3 - Randomization enhancements
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    
+    n_features = len(hyperplane) - 1
+    best_hyperplane = hyperplane.copy()
+    best_impurity = evaluate_split(X, y, hyperplane, impurity_measure)
+    
+    # Limit n_coefficients to available coefficients
+    n_coeffs = min(n_coefficients, n_features + 1)
+    
+    for _ in range(n_trials):
+        # Select random subset of coefficients
+        indices = rng.choice(n_features + 1, size=n_coeffs, replace=False)
+        
+        # Generate random direction
+        direction = np.zeros(n_features + 1)
+        direction[indices] = rng.standard_normal(n_coeffs)
+        
+        # Normalize direction
+        norm = np.linalg.norm(direction)
+        if norm > 1e-10:
+            direction = direction / norm
+        else:
+            continue
+        
+        # Try different step sizes
+        for step in [0.1, 0.5, 1.0]:
+            trial_hp = hyperplane + step * direction
+            trial_hp = normalize_hyperplane(trial_hp)
+            
+            trial_imp = evaluate_split(X, y, trial_hp, impurity_measure)
+            
+            if trial_imp < best_impurity:
+                best_impurity = trial_imp
+                best_hyperplane = trial_hp.copy()
+    
+    return best_hyperplane, best_impurity
+
+
+def validate_hyperplane(
+    hyperplane: np.ndarray,
+    rng: Optional[np.random.Generator] = None
+) -> Tuple[np.ndarray, bool]:
+    """
+    Task 2: Validate and fix degenerate hyperplanes.
+    
+    Checks for NaN, infinity, zero weights, and extreme values,
+    and attempts to fix them by generating a new random hyperplane.
+    
+    Args:
+        hyperplane: Hyperplane coefficients to validate.
+        rng: NumPy random generator for reproducibility.
+    
+    Returns:
+        Tuple[np.ndarray, bool]: (fixed_hyperplane, is_valid)
+            - fixed_hyperplane: The validated/fixed hyperplane
+            - is_valid: True if original hyperplane was valid, False if fixed
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    
+    fixed = hyperplane.copy()
+    valid = True
+    n_features = len(hyperplane) - 1
+    
+    # Fix NaN
+    if np.any(np.isnan(fixed)):
+        fixed = rng.standard_normal(n_features + 1)
+        fixed = normalize_hyperplane(fixed)
+        valid = False
+    
+    # Fix infinity
+    if np.any(np.isinf(fixed)):
+        fixed = np.clip(fixed, -10.0, 10.0)
+        valid = False
+    
+    # Fix zero weights
+    if np.allclose(fixed[:-1], 0):
+        fixed = rng.standard_normal(n_features + 1)
+        fixed = normalize_hyperplane(fixed)
+        valid = False
+    
+    # Fix extreme values
+    if np.max(np.abs(fixed)) > 1e6:
+        fixed = normalize_hyperplane(fixed)
+        valid = False
+    
+    return fixed, valid
