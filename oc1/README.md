@@ -61,6 +61,44 @@ This implementation includes Task 2 enhancements for improved hyperplane search:
    - Randomize order of coefficient optimization
    - Reduce bias from sequential ordering
 
+## Task 3: Auxiliary Features, Pruning, and Usability
+
+This implementation includes Task 3 enhancements for production-ready usage:
+
+1. **Pruning** (Section 2.4)
+   - **Impurity-based pruning**: Prune subtrees where impurity is below threshold
+   - **Reduced Error Pruning (REP)**: Prune based on validation set performance
+   - Automatic subtree removal to reduce overfitting
+
+2. **Explicit Stopping Criteria**
+   - Zero impurity (pure nodes)
+   - Minimum node size (`min_samples_leaf`, `min_samples_split`)
+   - Maximum tree depth (`max_depth`)
+   - Impurity threshold (`impurity_threshold`)
+
+3. **Evaluation Tools**
+   - **Cross-validation**: K-fold cross-validation with multiple metrics
+   - **Train/test split**: Stratified data splitting
+   - **Confusion matrix**: Classification performance analysis
+   - **Classification report**: Detailed precision, recall, F1-score metrics
+
+4. **Detailed Logging**
+   - Log all tree construction steps
+   - Record hyperplane coefficients and random seeds at each node
+   - Track impurity values and stopping criteria
+   - Optional file logging for analysis
+
+5. **Visualization** (optional, requires matplotlib)
+   - **Decision boundary plots**: Visualize 2D decision regions
+   - **Hyperplane visualization**: Plot all splitting hyperplanes
+   - **Tree structure**: Graph representation of tree topology
+
+6. **Enhanced API**
+   - Improved parameter documentation
+   - Verbose mode for construction monitoring
+   - Log file support for detailed analysis
+   - Comprehensive error handling
+
 ### Using Task 2 Features
 
 ```python
@@ -167,7 +205,9 @@ ObliqueDecisionTree(
     max_iterations=100,       # Hill-climbing iterations per node
     n_restarts=5,             # Random restarts (5 = Task 2 default, 1 = deterministic)
     random_state=None,        # Random seed
-    impurity_threshold=0.0,   # Stop splitting threshold
+    impurity_threshold=0.0,   # Stop splitting threshold (Task 3)
+    verbose=False,            # Enable verbose logging (Task 3)
+    log_file=None,            # Optional log file path (Task 3)
 )
 ```
 
@@ -180,6 +220,8 @@ ObliqueDecisionTree(
 - `get_n_leaves()`: Count leaf nodes
 - `get_hyperplanes()`: Get all splitting hyperplanes
 - `print_tree()`: Get tree visualization
+- `prune(X_val, y_val, method, impurity_threshold)`: Prune tree (Task 3)
+- `get_all_nodes()`: Get all nodes in breadth-first order
 
 ### Synthetic Datasets
 
@@ -196,6 +238,99 @@ from oc1.data import (
 X, y = make_diagonal_dataset(n_samples=100, random_state=42)
 ```
 
+## Task 3 Usage Examples
+
+### Pruning
+
+```python
+from oc1 import ObliqueDecisionTree
+from oc1.evaluation import train_test_split
+from oc1.data import make_diagonal_dataset
+
+# Generate data
+X, y = make_diagonal_dataset(n_samples=200, random_state=42)
+
+# Split into train/validation
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+
+# Build and prune tree
+tree = ObliqueDecisionTree(max_depth=10, random_state=42)
+tree.fit(X_train, y_train)
+
+# Prune using validation set
+tree.prune(method="rep", X_val=X_val, y_val=y_val)
+
+# Or prune by impurity threshold
+tree.prune(method="impurity", impurity_threshold=2.0)
+```
+
+### Cross-Validation
+
+```python
+from oc1 import ObliqueDecisionTree
+from oc1.evaluation import cross_validate
+from oc1.data import make_diagonal_dataset
+
+X, y = make_diagonal_dataset(n_samples=200, random_state=42)
+
+tree = ObliqueDecisionTree(max_depth=5, random_state=42)
+
+# 5-fold cross-validation
+results = cross_validate(tree, X, y, cv=5, random_state=42)
+
+print(f"Mean accuracy: {results['test_score'].mean():.3f}")
+print(f"Std accuracy: {results['test_score'].std():.3f}")
+```
+
+### Logging
+
+```python
+from oc1 import ObliqueDecisionTree
+from oc1.data import make_diagonal_dataset
+
+X, y = make_diagonal_dataset(n_samples=100, random_state=42)
+
+# Enable verbose logging
+tree = ObliqueDecisionTree(max_depth=5, verbose=True, random_state=42)
+tree.fit(X, y)
+
+# Or log to file
+tree = ObliqueDecisionTree(
+    max_depth=5,
+    log_file="tree_construction.log",
+    verbose=False,
+    random_state=42
+)
+tree.fit(X, y)
+
+# Get log summary
+summary = tree.logger.get_log_summary()
+print(f"Nodes created: {summary['nodes_created']}")
+print(f"Hyperplanes found: {summary['hyperplanes_found']}")
+```
+
+### Visualization
+
+```python
+from oc1 import ObliqueDecisionTree
+from oc1.visualization import plot_decision_boundary_2d, plot_hyperplanes_2d
+from oc1.data import make_diagonal_dataset
+import matplotlib.pyplot as plt
+
+X, y = make_diagonal_dataset(n_samples=100, random_state=42)
+
+tree = ObliqueDecisionTree(max_depth=5, random_state=42)
+tree.fit(X, y)
+
+# Plot decision boundary
+plot_decision_boundary_2d(tree, X, y)
+plt.show()
+
+# Plot hyperplanes
+plot_hyperplanes_2d(tree, X)
+plt.show()
+```
+
 ## Running Tests
 
 ```bash
@@ -207,6 +342,9 @@ pytest oc1/tests/task1_tests/ -v
 
 # Run Task 2 tests only
 pytest oc1/tests/task2_tests/ -v
+
+# Run Task 3 tests only
+pytest oc1/tests/task3_tests/ -v
 
 # Run with coverage
 pytest oc1/tests/ --cov=oc1 --cov-report=html
@@ -239,6 +377,18 @@ This implementation follows the OC1 paper exactly:
 | Multi-coefficient perturbation | Section 2 | `perturb_multiple_coefficients()` |
 | Random perturbation order | Section 2 | `use_random_perturbation_order` |
 | Degenerate hyperplane handling | Section 2.4 | `validate_hyperplane()` |
+
+### Task 3: Pruning and Evaluation
+
+| Feature | Paper Section | Implementation |
+|---------|--------------|----------------|
+| Impurity-based pruning | Section 2.4 | `prune(method="impurity")` |
+| Reduced Error Pruning | Section 2.4 | `prune(method="rep")` |
+| Explicit stopping criteria | Section 2.4 | `max_depth`, `min_samples_leaf`, `impurity_threshold` |
+| Cross-validation | Standard ML | `cross_validate()` |
+| Evaluation metrics | Standard ML | `confusion_matrix()`, `classification_report()` |
+| Detailed logging | Task 3 | `TreeConstructionLogger` |
+| Visualization | Task 3 | `plot_decision_boundary_2d()`, `plot_hyperplanes_2d()` |
 
 
 

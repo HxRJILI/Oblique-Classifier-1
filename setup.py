@@ -21,6 +21,10 @@ setup(
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
         ],
+        "viz": [
+            "matplotlib>=3.3.0",
+            "networkx>=2.5",
+        ],
     },
     classifiers=[
         "Development Status :: 3 - Alpha",

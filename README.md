@@ -12,7 +12,7 @@ Our goal is to create a robust, well-tested, and easy-to-use Python package (or 
 
 *   HxRJILI (RJILI HOUSSAM)
 *   Kim8x-srscb (Fatima-Ezzahrae AKEBLI)
-*   ---
+*   Yasseriads
 
 ---
 

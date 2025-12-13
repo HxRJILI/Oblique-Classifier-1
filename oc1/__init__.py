@@ -36,13 +36,40 @@ from oc1.core.hill_climb import (
     perturb_random_direction,
 )
 
-__version__ = "0.1.0"
+# Task 3: Evaluation module
+from oc1.evaluation import (
+    cross_validate,
+    train_test_split,
+    confusion_matrix,
+    classification_report,
+)
+
+# Task 3: Visualization module (optional, requires matplotlib)
+try:
+    from oc1.visualization import (
+        plot_decision_boundary_2d,
+        plot_hyperplanes_2d,
+        plot_tree_structure,
+    )
+    VISUALIZATION_AVAILABLE = True
+except ImportError:
+    VISUALIZATION_AVAILABLE = False
+
+# Task 3: Logging module
+from oc1.core.logging import (
+    TreeConstructionLogger,
+    get_default_logger,
+)
+
+__version__ = "0.2.0"
 __author__ = "OC1 Implementation Team"
 __paper__ = "Murthy et al., OC1: A randomized algorithm for building oblique decision trees, AAAI-1992"
 
 __all__ = [
+    # Core classes
     "ObliqueTreeNode",
     "ObliqueDecisionTree",
+    # Split evaluation
     "partition_data",
     "calculate_impurity",
     "compute_class_counts",
@@ -50,6 +77,7 @@ __all__ = [
     "evaluate_split",
     "is_pure",
     "get_majority_class",
+    # Hill climbing
     "perturb_coefficient",
     "hill_climb",
     "initialize_hyperplane",
@@ -57,4 +85,20 @@ __all__ = [
     "normalize_hyperplane",
     "compute_u_values",
     "perturb_random_direction",
+    # Task 3: Evaluation
+    "cross_validate",
+    "train_test_split",
+    "confusion_matrix",
+    "classification_report",
+    # Task 3: Logging
+    "TreeConstructionLogger",
+    "get_default_logger",
 ]
+
+# Add visualization if available
+if VISUALIZATION_AVAILABLE:
+    __all__.extend([
+        "plot_decision_boundary_2d",
+        "plot_hyperplanes_2d",
+        "plot_tree_structure",
+    ])
