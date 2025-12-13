@@ -30,6 +30,13 @@ This implementation covers the core deterministic components of OC1:
    - Sequential coefficient perturbation
    - Accept if impurity improves
    - Continue until local minimum
+  
+## Compatibility with Future Tasks
+
+This implementation is designed to integrate with:
+
+- **Task 2 (Randomization)**: `n_restarts` parameter, modular `find_best_hyperplane()`
+- **Task 3 (Pruning)**: `impurity_threshold` parameter, stored node impurities
 
 ## Task 2: Randomization and Enhanced Search
 
@@ -233,12 +240,7 @@ This implementation follows the OC1 paper exactly:
 | Random perturbation order | Section 2 | `use_random_perturbation_order` |
 | Degenerate hyperplane handling | Section 2.4 | `validate_hyperplane()` |
 
-## Compatibility with Future Tasks
 
-This implementation is designed to integrate with:
-
-- **Task 2 (Randomization)**: `n_restarts` parameter, modular `find_best_hyperplane()`
-- **Task 3 (Pruning)**: `impurity_threshold` parameter, stored node impurities
 
 ## Example: Comparing with Axis-Parallel Trees
 
