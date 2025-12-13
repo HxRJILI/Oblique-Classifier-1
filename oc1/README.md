@@ -48,7 +48,7 @@ This implementation includes Task 2 enhancements for improved hyperplane search:
 3. **K Random Trials** (n_restarts parameter)
    - Try multiple random starting points
    - Select best result across all trials
-   - Default: k=5 for good exploration
+   - Default: k=10 for good exploration
 
 4. **Random Perturbation Order**
    - Randomize order of coefficient optimization
