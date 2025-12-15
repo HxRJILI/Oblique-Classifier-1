@@ -14,11 +14,14 @@ Key Features:
 - Deterministic hill-climbing optimization (Task 1)
 - Multi-class classification support
 - Compatible with Task 2 (randomization) and Task 3 (pruning) extensions
+- Export methods: to_dict(), to_json(), to_dot()
 """
 
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
+import json
+import warnings
 
 from oc1.core.node import ObliqueTreeNode
 from oc1.core.splits import (
@@ -120,11 +123,8 @@ class ObliqueDecisionTree:
         self.verbose = verbose
         self.log_file = log_file
         
-        # Validate impurity measure
-        if self.impurity_measure not in ("sm", "mm"):
-            raise ValueError(
-                f"impurity_measure must be 'sm' or 'mm', got {impurity_measure}"
-            )
+        # Validate parameters
+        self._validate_params()
         
         # Tree state (set after fit)
         self.root: Optional[ObliqueTreeNode] = None
@@ -135,7 +135,7 @@ class ObliqueDecisionTree:
         
         # Task 3: Logging support
         self.logger: Optional[TreeConstructionLogger] = None
-        self.verbose: bool = False
+        self.verbose: bool = verbose
     
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'ObliqueDecisionTree':
         """
@@ -153,7 +153,8 @@ class ObliqueDecisionTree:
         
         Paper Reference: Section 2 - Recursive tree construction
         """
-        X = np.atleast_2d(X)
+        # Input validation
+        X = np.atleast_2d(X).astype(np.float64)
         y = np.atleast_1d(y)
         
         if len(X) != len(y):
@@ -871,3 +872,220 @@ class ObliqueDecisionTree:
             )
         else:
             return "ObliqueDecisionTree(not fitted)"
+
+    # ==================== NEW: Export Methods ====================
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Export tree structure to a dictionary.
+        
+        Returns:
+            Dict containing complete tree structure and metadata.
+        
+        Example:
+            >>> tree.fit(X, y)
+            >>> tree_dict = tree.to_dict()
+            >>> # Can be serialized with json.dumps(tree_dict)
+        """
+        self._check_is_fitted()
+        
+        return {
+            "metadata": {
+                "n_features": self.n_features_,
+                "n_classes": self.n_classes_,
+                "classes": self.classes_.tolist(),
+                "max_depth": self.max_depth,
+                "min_samples_leaf": self.min_samples_leaf,
+                "impurity_measure": self.impurity_measure,
+                "n_restarts": self.n_restarts,
+            },
+            "tree_stats": {
+                "depth": self.get_depth(),
+                "n_nodes": self.get_n_nodes(),
+                "n_leaves": self.get_n_leaves(),
+            },
+            "root": self._node_to_dict(self.root),
+        }
+    
+    def _node_to_dict(self, node: ObliqueTreeNode) -> Dict[str, Any]:
+        """Convert a node and its subtree to dictionary."""
+        if node is None:
+            return None
+        
+        node_dict = {
+            "is_leaf": node.is_leaf,
+            "depth": node.depth,
+            "n_samples": node.n_samples,
+            "impurity": node.impurity,
+            "predicted_class": node.predicted_class,
+            "class_distribution": {str(k): v for k, v in node.class_distribution.items()},
+        }
+        
+        if not node.is_leaf and node.hyperplane is not None:
+            node_dict["hyperplane"] = node.hyperplane.tolist()
+            node_dict["left_child"] = self._node_to_dict(node.left_child)
+            node_dict["right_child"] = self._node_to_dict(node.right_child)
+        
+        return node_dict
+    
+    def to_json(self, filepath: Optional[str] = None, indent: int = 2) -> str:
+        """
+        Export tree structure to JSON.
+        
+        Args:
+            filepath: Optional path to save JSON file.
+            indent: JSON indentation level.
+        
+        Returns:
+            JSON string representation of the tree.
+        
+        Example:
+            >>> json_str = tree.to_json()
+            >>> tree.to_json("model.json")  # Save to file
+        """
+        tree_dict = self.to_dict()
+        json_str = json.dumps(tree_dict, indent=indent, default=str)
+        
+        if filepath:
+            with open(filepath, 'w') as f:
+                f.write(json_str)
+        
+        return json_str
+    
+    def to_dot(self, feature_names: Optional[List[str]] = None) -> str:
+        """
+        Export tree structure to DOT format for Graphviz visualization.
+        
+        Args:
+            feature_names: Optional list of feature names.
+        
+        Returns:
+            DOT format string.
+        
+        Example:
+            >>> dot_str = tree.to_dot()
+            >>> # Render with: graphviz.Source(dot_str).render("tree")
+        """
+        self._check_is_fitted()
+        
+        if feature_names is None:
+            feature_names = [f"x{i}" for i in range(self.n_features_)]
+        
+        lines = ["digraph OC1Tree {"]
+        lines.append('    node [shape=box, style="rounded,filled"];')
+        lines.append('    edge [fontsize=10];')
+        
+        self._node_to_dot(self.root, lines, feature_names, node_id=[0])
+        
+        lines.append("}")
+        return "\n".join(lines)
+    
+    def _node_to_dot(
+        self,
+        node: ObliqueTreeNode,
+        lines: List[str],
+        feature_names: List[str],
+        node_id: List[int],
+    ) -> int:
+        """Recursively convert nodes to DOT format."""
+        current_id = node_id[0]
+        node_id[0] += 1
+        
+        if node.is_leaf:
+            color = "#98FB98" if node.n_samples > 0 else "#FFFFFF"
+            label = f"class={node.predicted_class}\\nsamples={node.n_samples}"
+            lines.append(f'    node{current_id} [label="{label}", fillcolor="{color}"];')
+        else:
+            # Format hyperplane equation
+            terms = []
+            for i, coef in enumerate(node.hyperplane[:-1]):
+                if abs(coef) > 0.01:
+                    terms.append(f"{coef:.2f}*{feature_names[i]}")
+            equation = " + ".join(terms) + f" + {node.hyperplane[-1]:.2f}"
+            
+            color = "#ADD8E6"
+            label = f"{equation}\\nsamples={node.n_samples}\\nimp={node.impurity:.3f}"
+            lines.append(f'    node{current_id} [label="{label}", fillcolor="{color}"];')
+            
+            if node.left_child:
+                left_id = self._node_to_dot(node.left_child, lines, feature_names, node_id)
+                lines.append(f'    node{current_id} -> node{left_id} [label="V > 0"];')
+            
+            if node.right_child:
+                right_id = self._node_to_dot(node.right_child, lines, feature_names, node_id)
+                lines.append(f'    node{current_id} -> node{right_id} [label="V ≤ 0"];')
+        
+        return current_id
+    
+    # ==================== NEW: Feature Importances ====================
+    
+    @property
+    def feature_importances_(self) -> np.ndarray:
+        """
+        Compute feature importances based on hyperplane coefficients.
+        
+        Importances are computed as the sum of absolute coefficient values
+        across all hyperplanes, weighted by the number of samples at each node.
+        
+        Returns:
+            np.ndarray: Normalized feature importance scores.
+        
+        Example:
+            >>> tree.fit(X, y)
+            >>> importances = tree.feature_importances_
+            >>> for i, imp in enumerate(importances):
+            ...     print(f"Feature {i}: {imp:.3f}")
+        """
+        self._check_is_fitted()
+        
+        importances = np.zeros(self.n_features_)
+        total_weight = 0
+        
+        def accumulate_importances(node: ObliqueTreeNode):
+            nonlocal total_weight
+            if node is None or node.is_leaf:
+                return
+            
+            if node.hyperplane is not None:
+                weight = node.n_samples
+                total_weight += weight
+                # Add weighted absolute coefficients
+                importances[:] += weight * np.abs(node.hyperplane[:-1])
+            
+            accumulate_importances(node.left_child)
+            accumulate_importances(node.right_child)
+        
+        accumulate_importances(self.root)
+        
+        # Normalize
+        if total_weight > 0:
+            importances /= total_weight
+        
+        # Scale to sum to 1
+        if importances.sum() > 0:
+            importances /= importances.sum()
+        
+        return importances
+    
+    def _validate_params(self) -> None:
+        """Validate constructor parameters."""
+        if self.max_depth is not None and self.max_depth < 1:
+            raise ValueError(f"max_depth must be >= 1, got {self.max_depth}")
+        
+        if self.min_samples_leaf < 1:
+            raise ValueError(f"min_samples_leaf must be >= 1, got {self.min_samples_leaf}")
+        
+        if self.min_samples_split < 2:
+            raise ValueError(f"min_samples_split must be >= 2, got {self.min_samples_split}")
+        
+        if self.impurity_measure not in ("sm", "mm"):
+            raise ValueError(f"impurity_measure must be 'sm' or 'mm', got {self.impurity_measure}")
+        
+        if self.max_iterations < 1:
+            raise ValueError(f"max_iterations must be >= 1, got {self.max_iterations}")
+        
+        if self.n_restarts < 1:
+            raise ValueError(f"n_restarts must be >= 1, got {self.n_restarts}")
+        
+        if self.impurity_threshold < 0:
+            raise ValueError(f"impurity_threshold must be >= 0, got {self.impurity_threshold}")

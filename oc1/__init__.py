@@ -11,8 +11,11 @@ This package provides:
 - ObliqueDecisionTree: Main classifier implementing the OC1 algorithm
 - Impurity measures: Sum Minority (SM) and Max Minority (MM)
 - Coefficient perturbation and hill-climbing optimization
+- Export methods: to_dict(), to_json(), to_dot()
 
 Task 1 Implementation - Core Tree Construction (Deterministic)
+Task 2 Implementation - Randomization (Multiple restarts, random perturbation)
+Task 3 Implementation - Pruning, Logging, Evaluation, Visualization
 """
 
 from oc1.core.node import ObliqueTreeNode
@@ -61,7 +64,7 @@ from oc1.core.logging import (
     get_default_logger,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"  # Updated with export features
 __author__ = "OC1 Implementation Team"
 __paper__ = "Murthy et al., OC1: A randomized algorithm for building oblique decision trees, AAAI-1992"
 

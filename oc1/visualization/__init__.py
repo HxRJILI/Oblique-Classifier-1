@@ -9,8 +9,14 @@ Components:
 - plot_hyperplanes: Visualize hyperplanes in feature space
 """
 
-from typing import Optional, List, Tuple
+from __future__ import annotations
+from typing import Optional, List, Tuple, Any, TYPE_CHECKING
 import numpy as np
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
 try:
     import matplotlib.pyplot as plt
@@ -18,17 +24,19 @@ try:
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
+    plt = None  # type: ignore
+    patches = None  # type: ignore
 
 
 def plot_decision_boundary_2d(
     tree,
     X: np.ndarray,
     y: np.ndarray,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[Any] = None,
     resolution: int = 100,
     alpha: float = 0.3,
     show_data: bool = True,
-) -> Optional[plt.Figure]:
+) -> Optional[Any]:
     """
     Plot 2D decision boundary of an oblique decision tree.
     
@@ -104,10 +112,10 @@ def plot_decision_boundary_2d(
 def plot_hyperplanes_2d(
     tree,
     X: np.ndarray,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[Any] = None,
     show_data: bool = True,
     colors: Optional[List[str]] = None,
-) -> Optional[plt.Figure]:
+) -> Optional[Any]:
     """
     Plot hyperplanes (decision boundaries) for a 2D oblique tree.
     
@@ -207,10 +215,10 @@ def plot_hyperplanes_2d(
 
 def plot_tree_structure(
     tree,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[Any] = None,
     node_size: int = 1000,
     font_size: int = 10,
-) -> Optional[plt.Figure]:
+) -> Optional[Any]:
     """
     Plot tree structure as a graph.
     

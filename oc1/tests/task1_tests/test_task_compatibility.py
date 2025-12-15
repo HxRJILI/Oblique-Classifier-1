@@ -182,15 +182,22 @@ class TestTask3PruningInterfaces:
         verify_parents(tree.root, None)
     
     def test_prune_placeholder_exists(self):
-        """Prune method exists and raises NotImplementedError."""
+        """Prune method exists and can be called with validation data (Task 3 implemented)."""
         tree = ObliqueDecisionTree()
         X, y = make_diagonal_dataset(n_samples=50, random_state=42)
         tree.fit(X, y)
         
-        with pytest.raises(NotImplementedError) as exc_info:
-            tree.prune()
+        # Task 3 is now implemented - prune() works with validation data
+        # Test that it accepts method parameter and validation data
+        assert hasattr(tree, 'prune')
         
-        assert "Task 3" in str(exc_info.value)
+        # Test impurity method (doesn't require validation data)
+        tree.prune(method='impurity', impurity_threshold=0.5)
+        
+        # Test that REP method requires validation data
+        with pytest.raises(ValueError) as exc_info:
+            tree.prune(method='rep')
+        assert "X_val" in str(exc_info.value) or "required" in str(exc_info.value).lower()
     
     def test_nodes_store_all_metadata(self):
         """Nodes store all metadata needed for pruning decisions."""
