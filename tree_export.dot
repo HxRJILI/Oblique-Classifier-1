@@ -1,0 +1,21 @@
+digraph OC1Tree {
+    node [shape=box, style="rounded,filled"];
+    edge [fontsize=10];
+    node0 [label="-0.85*Feature 0 + -0.53*Feature 1 + 0.03\nsamples=150\nimp=2.000", fillcolor="#ADD8E6"];
+    node1 [label="1.00*Feature 0 + 2.93\nsamples=80\nimp=1.000", fillcolor="#ADD8E6"];
+    node2 [label="1.00*Feature 0 + 2.32\nsamples=79\nimp=1.000", fillcolor="#ADD8E6"];
+    node3 [label="1.00*Feature 0 + 1.97\nsamples=78\nimp=1.000", fillcolor="#ADD8E6"];
+    node4 [label="class=0\nsamples=77", fillcolor="#98FB98"];
+    node3 -> node4 [label="V > 0"];
+    node5 [label="class=0\nsamples=1", fillcolor="#98FB98"];
+    node3 -> node5 [label="V ≤ 0"];
+    node2 -> node3 [label="V > 0"];
+    node6 [label="class=0\nsamples=1", fillcolor="#98FB98"];
+    node2 -> node6 [label="V ≤ 0"];
+    node1 -> node2 [label="V > 0"];
+    node7 [label="class=0\nsamples=1", fillcolor="#98FB98"];
+    node1 -> node7 [label="V ≤ 0"];
+    node0 -> node1 [label="V > 0"];
+    node8 [label="class=1\nsamples=70", fillcolor="#98FB98"];
+    node0 -> node8 [label="V ≤ 0"];
+}
