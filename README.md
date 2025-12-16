@@ -102,7 +102,7 @@ Axis-Parallel Tree (many splits)     Oblique Tree (one split)
 |-----------------|------|
 | **HxRJILI** | RJILI Houssam |
 | **Kim8x-srscb** | Fatima-Ezzahrae AKEBLI |
-| **Yasseriads** | Yasser |
+| **Yasseriads** | Yasser ERRITA |
 
 ---
 
