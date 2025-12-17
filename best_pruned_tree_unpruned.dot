@@ -1,0 +1,37 @@
+digraph OC1Tree {
+    node [shape=box, style="rounded,filled"];
+    edge [fontsize=10];
+    node0 [label="1.00*petal length (cm) + -0.13\nsamples=90\nimp=1.000", fillcolor="#ADD8E6"];
+    node1 [label="1.00*sepal length (cm) + -0.18\nsamples=61\nimp=1.000", fillcolor="#ADD8E6"];
+    node2 [label="1.00*sepal length (cm) + -0.21\nsamples=60\nimp=1.000", fillcolor="#ADD8E6"];
+    node3 [label="1.00*sepal length (cm) + -0.71\nsamples=58\nimp=1.000", fillcolor="#ADD8E6"];
+    node4 [label="class=2\nsamples=9", fillcolor="#98FB98"];
+    node3 -> node4 [label="V > 0"];
+    node5 [label="1.00*petal length (cm) + -0.70\nsamples=49\nimp=1.000", fillcolor="#ADD8E6"];
+    node6 [label="class=2\nsamples=10", fillcolor="#98FB98"];
+    node5 -> node6 [label="V > 0"];
+    node7 [label="1.00*sepal length (cm) + -0.62\nsamples=39\nimp=1.000", fillcolor="#ADD8E6"];
+    node8 [label="class=1\nsamples=4", fillcolor="#98FB98"];
+    node7 -> node8 [label="V > 0"];
+    node9 [label="1.00*petal width (cm) + -0.67\nsamples=35\nimp=1.000", fillcolor="#ADD8E6"];
+    node10 [label="class=2\nsamples=10", fillcolor="#98FB98"];
+    node9 -> node10 [label="V > 0"];
+    node11 [label="1.00*sepal length (cm) + -0.24\nsamples=25\nimp=1.000", fillcolor="#ADD8E6"];
+    node12 [label="class=1\nsamples=24", fillcolor="#98FB98"];
+    node11 -> node12 [label="V > 0"];
+    node13 [label="class=0\nsamples=1", fillcolor="#98FB98"];
+    node11 -> node13 [label="V ≤ 0"];
+    node9 -> node11 [label="V ≤ 0"];
+    node7 -> node9 [label="V ≤ 0"];
+    node5 -> node7 [label="V ≤ 0"];
+    node3 -> node5 [label="V ≤ 0"];
+    node2 -> node3 [label="V > 0"];
+    node14 [label="class=1\nsamples=2", fillcolor="#98FB98"];
+    node2 -> node14 [label="V ≤ 0"];
+    node1 -> node2 [label="V > 0"];
+    node15 [label="class=1\nsamples=1", fillcolor="#98FB98"];
+    node1 -> node15 [label="V ≤ 0"];
+    node0 -> node1 [label="V > 0"];
+    node16 [label="class=0\nsamples=29", fillcolor="#98FB98"];
+    node0 -> node16 [label="V ≤ 0"];
+}
