@@ -4,6 +4,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/tests-236%20passed-green.svg)]()
+Project Presentation: https://www.canva.com/design/DAG7t5nKUvA/BfUUuEFykRJ90x7hd12dAQ/edit?utm_content=DAG7t5nKUvA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 A Python implementation of the **OC1 oblique decision tree algorithm** as described in:
 
